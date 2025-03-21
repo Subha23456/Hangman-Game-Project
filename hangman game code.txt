@@ -1,0 +1,93 @@
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.image import Image
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+import random
+from kivy.core.audio import SoundLoader
+class HangmanGame(App):
+def __init__(self, **kwargs):
+super().__init__(**kwargs)
+self.word_list = ["hangman", "python", "kivy", "programming", 
+"computer"]
+self.secret_word = random.choice(self.word_list)
+self.guess_word = ['_' for _ in self.secret_word]
+self.attempts = 6
+self.result_label = Label(text=" ".join(self.guess_word), font_size=30)
+self.info_label = Label(text=f"Attempts left: {self.attempts}", font_size=20)
+self.input_box = TextInput(hint_text="Enter a letter", font_size=20)
+self.submit_button = Button(text="Submit", font_size=20)
+self.submit_button.bind(on_press=self.check_letter)
+self.start_button = Button(text="Start", font_size=20)
+self.start_button.bind(on_press=self.start_game)
+self.play_again_button = Button(text="Play Again", font_size=20, 
+disabled=True)
+self.play_again_button.bind(on_press=self.restart_game)
+self.alphabet_layout = BoxLayout(orientation="horizontal")
+self.stage_images = [f"hangman{i}.png" for i in range(7)] # Assuming you 
+have 7 images from hangman0.png to hangman6.png
+self.current_stage = 0
+self.image_widget = Image(source=self.stage_images[self.current_stage])
+self.music = SoundLoader.load('background_music.mp3')
+self.music.loop = True
+self.music.play()
+def build(self):
+layout = BoxLayout(orientation="vertical")
+layout.add_widget(self.image_widget)
+layout.add_widget(self.result_label)
+layout.add_widget(self.info_label)
+layout.add_widget(self.input_box)
+layout.add_widget(self.submit_button)
+layout.add_widget(self.start_button)
+layout.add_widget(self.play_again_button)
+self.create_alphabet_buttons()
+layout.add_widget(self.alphabet_layout)
+return layout
+def create_alphabet_buttons(self):
+for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+button = Button(text=char, font_size=20)
+button.bind(on_press=self.on_alphabet_button_press)
+self.alphabet_layout.add_widget(button)
+def on_alphabet_button_press(self, instance):
+letter = instance.text
+self.input_box.text = letter
+def check_letter(self, instance):
+letter = self.input_box.text.lower()
+if letter in self.secret_word:
+for i in range(len(self.secret_word)):
+if self.secret_word[i] == letter:
+self.guess_word[i] = letter
+self.result_label.text = " ".join(self.guess_word)
+else:
+self.attempts -= 1
+self.current_stage += 1
+if self.current_stage < len(self.stage_images):
+self.image_widget.source = self.stage_images[self.current_stage]
+ self.info_label.text = f"Attempts left: {self.attempts}"
+ if self.attempts == 0:
+self.info_label.text = "Game over! You lose."
+ self.result_label.text = f"The word was: {self.secret_word}"
+ self.play_again_button.disabled = False
+self.music.stop()
+if '_' not in self.guess_word:
+self.info_label.text = "Congratulations! You win."
+self.result_label.text = f"The word was: {self.secret_word}"
+self.play_again_button.disabled = False
+self.music.stop()
+def start_game(self, instance):
+self.secret_word = random.choice(self.word_list)
+self.guess_word = ['_' for _ in self.secret_word]
+self.attempts = 6
+self.result_label.text = " ".join(self.guess_word)
+self.info_label.text = f"Attempts left: {self.attempts}"
+self.input_box.text = ""
+self.current_stage = 0
+self.image_widget.source = self.stage_images[self.current_stage]
+self.play_again_button.disabled = True
+def restart_game(self, instance):
+self.start_game(None)
+self.music.play()
+if __name__ == "__main__":
+app = HangmanGame()
+app.run()
